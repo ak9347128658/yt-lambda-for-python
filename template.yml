@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  A template for deploying a Flask application to AWS Lambda using aws-lambda-wsgi.
+
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+  Function:
+    Timeout: 300
+    MemorySize: 128
+    Runtime: python3.9
+    Tracing: Active
+    # VpcConfig:
+    #   SecurityGroupIds:
+    #     - sg-0a3df377d1f5955a3
+    #     - sg-0a885743da52854f7
+    #   SubnetIds:
+    #     - subnet-0bb4b9c64e8b40c55
+    #     - subnet-031529a4f7534d831
+    # Environment:
+    #   Variables:
+    #     VPC_ID: vpc-0f389cbe50e3a91da
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+
+Resources:
+  ApiDeployment:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+  # CommonLambdaExecutionRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - lambda.amazonaws.com
+  #           Action: 'sts:AssumeRole'
+  #     Policies:
+  #       - PolicyName: LambdaCommonPolicy
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - logs:CreateLogGroup
+  #                 - logs:CreateLogStream
+  #                 - logs:PutLogEvents
+  #               Resource: 'arn:aws:logs:*:*:*'
+  #             - Effect: Allow
+  #               Action:
+  #                 - s3:GetObject
+  #               Resource: 'arn:aws:s3:::*'
+  #             - Effect: Allow
+  #               Action:
+  #                 - textract:DetectDocumentText
+  #               Resource: '*'
+  #             - Effect: Allow
+  #               Action:
+  #                 - ec2:CreateNetworkInterface
+  #                 - ec2:DescribeNetworkInterfaces
+  #                 - ec2:DeleteNetworkInterface
+  #               Resource: '*'
+  #             - Effect: Allow
+  #               Action:
+  #                 - secretsmanager:GetSecretValue
+  #                 - secretsmanager:ListSecrets
+  #                 - secretsmanager:DescribeSecret
+  #               Resource: '*'
+  #             - Effect: Allow
+  #               Action: '*'
+  #               Resource: '*'
+  TestApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: test_apis/
+      Handler: app.lambda_handler
+      # Role: !GetAtt CommonLambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetTodoApi:
+          Type: Api
+          Properties:
+            Path: /test-todo-get
+            Method: get
+            RestApiId: !Ref ApiDeployment
+        PostTodoApi:
+          Type: Api
+          Properties:
+            Path: /test-todo-post
+            Method: post
+            RestApiId: !Ref ApiDeployment
+        PathParameterTodoApi:
+          Type: Api
+          Properties:
+            Path: /test-path-get/{id}
+            Method: get
+            RestApiId: !Ref ApiDeployment
+        QueryParamsTodoApi:
+          Type: Api
+          Properties:
+            Path: /test-get-query
+            Method: get
+            RestApiId: !Ref ApiDeployment
+
